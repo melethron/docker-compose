@@ -1,0 +1,46 @@
+version: "3.4"
+networks:
+  ipam:
+services:
+  nginx:
+    image: nginx:1.19.2-alpine
+    restart: always
+    networks:
+      - ipam
+    ports:
+      - 443:443
+      - 80:80
+    volumes:
+      - /data/certs:/etc/nginx/certs/
+      - /data/config:/etc/nginx/conf.d/
+  db:
+    image: mysql:5.6
+    restart: always
+    networks:
+      - ipam
+    env_file:
+      - env/db.env
+    volumes:
+      - db-data:/var/lib/mysql
+  ipam:
+    image: phpipam/phpipam-www:1.4x
+    restart: always
+    depends_on:
+      - db
+    networks:
+      - ipam
+    env_file:
+      - env/phpipam.env
+    expose:
+      - "80"
+  phpipam-cron:
+    image: phpipam/phpipam-cron:1.4x
+    env_file:
+      - env/phpipam.env
+    restart: unless-stopped
+    depends_on:
+      - db
+    networks:
+      - ipam
+volumes:
+  db-data:
